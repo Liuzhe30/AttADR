@@ -40,6 +40,7 @@ for i in range(0, 2):
         transporter_vec[i][j] = np.random.randint(2, high = None, size = 1, dtype = 'l')
 np.savetxt('data/transporter_vec.npy', transporter_vec, fmt = "%d")
 
+
 # drug similarity
 substructure_mat = np.random.uniform(0, 1, (N, N))
 for i in range(0, N):
@@ -50,6 +51,11 @@ target_mat = np.random.uniform(0, 1, (N, N))
 for i in range(0, N):
     target_mat[i][i] = 1
 np.savetxt('data/target_mat.npy', target_mat)
+
+enzyme_mat = np.random.uniform(0, 1, (N, N))
+for i in range(0, N):
+    enzyme_mat[i][i] = 1
+np.savetxt('data/enzyme_mat.npy', enzyme_mat)
 
 pathway_mat = np.random.uniform(0, 1, (N, N))
 for i in range(0, N):
