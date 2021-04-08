@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import tensorflow as tf
+import keras
 from keras import layers, models, optimizers
 from keras.utils import to_categorical
 from keras.layers import *
@@ -25,6 +26,7 @@ K.set_image_data_format('channels_last')
 np.random.seed(0)
 
 # set paramaters
+class_num = 4
 N = 100
 edge = 200
 a = 881
@@ -32,6 +34,9 @@ b = 1162
 c = 202
 d = 957
 e = 500
+
+def stack_layer(AE1, AE2, AE3, AE4, AE5):
+    return Lambda(K.stack)([AE1, AE2, AE3, AE4, AE5])
 
 def xdata_generator():
     drug_profile = np.loadtxt('data/drug_profile.npy') # N * (a + b + c + d + e)
@@ -70,7 +75,7 @@ if __name__ == "__main__":
     x = xdata_generator()
     print("x shape: " + str(x.shape)) # edge * 2 * (a + b + c + d + e) ,  (200, 2, 3702)
     y = np.loadtxt('data/label_mat.npy')[:,2]
-    y_onehot = to_categorical(y, 4)
+    y_onehot = to_categorical(y, class_num)
     print("y_onehot shape: " + str(y_onehot.shape)) # edge * 4 , (200, 4)
     
     # split dataset
@@ -101,7 +106,8 @@ if __name__ == "__main__":
     AE5 = Dense(N, activation='relu', name = 'AE_5')(AE5)    
     print('AE1.get_shape()', AE1.get_shape())
     
-    profile_merged = tf.stack([AE1, AE2, AE3, AE4, AE5], axis=1)
+    stack = Lambda(lambda x: K.stack(x, axis=1) )
+    profile_merged = stack([AE1, AE2, AE3, AE4, AE5])
     print('profile_merged.get_shape()', profile_merged.get_shape()) # 5 * N  ,(?, 5, 100)
     
     ## drug similarity
@@ -117,14 +123,25 @@ if __name__ == "__main__":
     final_merged = concatenate([profile_merged, similarity_merged], axis=1) 
     print('final_merged.get_shape()', final_merged.get_shape())  # 5(N + 1) * N  , (?, 505, 100)
 
-    final_merged_trans = tf.transpose(final_merged, perm = (0, 2, 1))
+    final_merged_trans = Permute((2, 1))(final_merged)
     print('final_merged_trans.get_shape()', final_merged_trans.get_shape())  # N * 5(N + 1) , (?, 100, 505)
     
     # MultiHeadAttention
     from keras_multi_head import MultiHeadAttention  # pip install keras_multi_head
-    att1 = MultiHeadAttention(head_num = N, name = 'Multi-Head',)(final_merged)
+    att1 = MultiHeadAttention(head_num = N, name = 'Multi-Head-1',)(final_merged)
     print('att1.get_shape()', att1.get_shape())
-    att2 = MultiHeadAttention(head_num= 5 * (N + 1), name = 'Multi-Head',)(final_merged_trans)
+    att2 = MultiHeadAttention(head_num= 5 * (N + 1), name = 'Multi-Head-2',)(final_merged_trans)
     print('att2.get_shape()', att2.get_shape())
     
+    # Output
+    att2 = Permute((2, 1))(att2)
+    print('att2.get_shape()', att2.get_shape())
+    att_merged = concatenate([att1, att2], axis=0)
+    print('att_merged.get_shape()', att_merged.get_shape())
+    gap = GlobalAveragePooling1D()(att_merged)
+    outputs = Dense(class_num, activation='softmax', name = 'softmax_output')(gap)
+    print('outputs.get_shape()', outputs.get_shape())
     
+    # register model
+    model = Model(inputs=[input1, input2, input3, input4, input5, input6, input7, input8, input9, input10], outputs=outputs)  
+    model.summary()
