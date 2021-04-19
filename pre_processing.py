@@ -35,7 +35,7 @@ with open('data/label_ddi/ddi_label.csv', 'r') as file:
     line = file.readline()
     line = file.readline()
     while line:
-        label_list.append([line.split(',')[3], line.split(',')[4], line.split(',')[0]])
+        label_list.append([line.split(',')[2], line.split(',')[3], line.split(',')[0]])
         #print([line.split(',')[3], line.split(',')[4], line.split(',')[0]])
         #idx += 1
         #print(idx)
