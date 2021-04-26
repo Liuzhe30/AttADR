@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
-
+from data_gener import data_gener
 import tensorflow as tf
 import keras
 from keras import layers, models, optimizers
@@ -37,20 +37,6 @@ e = 27  # transporter
 
 def stack_layer(AE1, AE2, AE3, AE4, AE5):
     return Lambda(K.stack)([AE1, AE2, AE3, AE4, AE5])
-
-def xdata_generator():
-    drug_profile = np.load('data/feature.npy') # N * (a + b + c + d + e)
-    #similarity_mat = np.loadtxt('data/similarity_mat.npy') # 5N * N
-    y = np.load('data/label.npy')  # edge * 3
-    drug_id_dict = {}
-    for i in range(0, len(drug_profile)):
-        drug_id_dict[drug_profile[i][-1]] = i
-    x_slide = []
-    for i in range(0, edge):
-        #print(np.r_[drug_profile[int(y[i][0])], drug_profile[int(y[i][1])]])
-        x_slide.append(np.c_[drug_profile[drug_id_dict[y[i][0]]], drug_profile[drug_id_dict[y[i][1]]]].transpose())
-    x = np.array(x_slide)
-    return x
    
 if __name__ == "__main__":
     
@@ -73,21 +59,19 @@ if __name__ == "__main__":
     
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
-        
-    # load data
-    x = xdata_generator()
-    print("x shape: " + str(x.shape)) # edge * 2 * (a + b + c + d + e) ,  (200, 2, 3702)
-    y = np.load('data/label.npy')[:,2]
-    y_onehot = to_categorical(y, class_num)
-    print("y_onehot shape: " + str(y_onehot.shape)) # edge * 4 , (200, 4)
-    
+
+    batch_size = 32
+    labels = np.load('data/label.npy')
     # split dataset
-    x_train = x[0:120000, :, :]
-    x_valid = x[120000:121499, :, :]
-    x_test = x[121499:1222999, :, :]
-    y_train = y_onehot[0:120000, :]
-    y_valid = y_onehot[120000:121499, :]
-    y_test = y_onehot[121499:1222999, :]
+    y_train = labels[0:120000, :]
+    y_valid = labels[120000:121499, :]
+    y_test = labels[121499:1222999, :]
+
+
+    DataLoader_train = data_gener(y_train, batch_size, len(y_train), tuple([2, a + b + c + d + e]), class_num)
+    DataLoader_valid = data_gener(y_valid, batch_size, len(y_valid), tuple([2, a + b + c + d + e]), class_num)
+    DataLoader_test = data_gener(y_test, batch_size, len(y_test), tuple([2, a + b + c + d + e]), class_num)
+
     
     # build model
     ## drug profile
@@ -148,3 +132,9 @@ if __name__ == "__main__":
     # register model
     model = Model(inputs=[input1, input2, input3, input4, input5, input6, input7, input8, input9, input10], outputs=outputs)  
     model.summary()
+
+    # test model
+    model.compile(optimizer='adam', loss='mse')
+    model.fit_generator(generator=DataLoader_train,
+                        validation_data=DataLoader_valid,
+                        use_multiprocessing=True)
