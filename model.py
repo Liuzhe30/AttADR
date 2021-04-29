@@ -11,6 +11,7 @@ from keras.callbacks import Callback
 from keras.initializers import Constant
 from keras import backend as K
 from tensorflow.keras.utils import multi_gpu_model
+import os
 
 K.clear_session()
 import matplotlib.pyplot as plt
@@ -44,7 +45,7 @@ def stack_layer(AE1, AE2, AE3, AE4, AE5):
 
 
 if __name__ == "__main__":
-
+    os.environ["CUDA_VISIBLE_DEVICES"] = "7"
     parser = argparse.ArgumentParser(description="attddi stucture.")
     parser.add_argument('--epochs', default=10, type=int)
     parser.add_argument('--batch_size', default=128, type=int)
@@ -101,17 +102,18 @@ if __name__ == "__main__":
     print('profile_merged.get_shape()', profile_merged.get_shape())  # 5 * N  ,(?, 5, 100)
 
     # drug similarity
-    input6 = Input(shape=(N, N), name='drug_similarity_a')
-    input7 = Input(shape=(N, N), name='drug_similarity_b')
-    input8 = Input(shape=(N, N), name='drug_similarity_c')
-    input9 = Input(shape=(N, N), name='drug_similarity_d')
-    input10 = Input(shape=(N, N), name='drug_similarity_e')
+    # input6 = Input(shape=(N, N), name='drug_similarity_a')
+    # input7 = Input(shape=(N, N), name='drug_similarity_b')
+    # input8 = Input(shape=(N, N), name='drug_similarity_c')
+    # input9 = Input(shape=(N, N), name='drug_similarity_d')
+    # input10 = Input(shape=(N, N), name='drug_similarity_e')
 
-    similarity_merged = concatenate([input6, input7, input8, input9, input10], axis=1)
-    print('similarity_merged.get_shape()', similarity_merged.get_shape())  # 5N * N , (?, 500, 100)
+    # similarity_merged = concatenate([input6, input7, input8, input9, input10], axis=1)
+    # print('similarity_merged.get_shape()', similarity_merged.get_shape())  # 5N * N , (?, 500, 100)
 
-    final_merged = concatenate([profile_merged, similarity_merged], axis=1)
-    print('final_merged.get_shape()', final_merged.get_shape())  # 5(N + 1) * N  , (?, 505, 100)
+    # final_merged = concatenate([profile_merged, similarity_merged], axis=1)
+    final_merged = profile_merged
+    # print('final_merged.get_shape()', final_merged.get_shape())  # 5(N + 1) * N  , (?, 505, 100)
 
     final_merged_trans = Permute((2, 1))(final_merged)
     print('final_merged_trans.get_shape()', final_merged_trans.get_shape())  # N * 5(N + 1) , (?, 100, 505)
@@ -121,7 +123,7 @@ if __name__ == "__main__":
 
     att1 = MultiHeadAttention(head_num=N, name='Multi-Head-1', )(final_merged)
     print('att1.get_shape()', att1.get_shape())
-    att2 = MultiHeadAttention(head_num=5 * (N + 1), name='Multi-Head-2', )(final_merged_trans)
+    att2 = MultiHeadAttention(head_num=5, name='Multi-Head-2', )(final_merged_trans)
     print('att2.get_shape()', att2.get_shape())
 
     # Output
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     print('outputs.get_shape()', outputs.get_shape())
 
     # register model
-    model = Model(inputs=[input1, input2, input3, input4, input5, input6, input7, input8, input9, input10],
+    model = Model(inputs=[input1, input2, input3, input4, input5],
                   outputs=outputs)
     model.summary()
     # parallel_model = multi_gpu_model(model, gpus=4)
