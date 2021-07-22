@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
-# SciPy Hierarchical Clusterin by Zhe Liu on 7/21/2021
+# SciPy Hierarchical Clustering by Zhe Liu on 7/21/2021
 
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage, cophenet, fcluster
@@ -129,15 +129,15 @@ fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_si
 plt.savefig('Hierarchical Clustering Dendrogram (truncated).png')
 
 # Select the critical distance to determine the number of clusters
+max_d = 7
+fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10, max_d=max_d)
+#plt.show()
+plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 7).png')
+
 max_d = 6
 fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10, max_d=max_d)
 #plt.show()
 plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 6).png')
-
-max_d = 5
-fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10, max_d=max_d)
-#plt.show()
-plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 5).png')
 
 # We can use the FCLUSTER equation to get the cluster information:
 # If we already know the maximum threshold from the tree, 
