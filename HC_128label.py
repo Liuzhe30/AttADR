@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
-# SciPy Hierarchical Clustering by Zhe Liu on 7/21/2021
+# SciPy Hierarchical Clusterin by Zhe Liu on 7/21/2021
 
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage, cophenet, fcluster
@@ -72,7 +72,7 @@ def data_generator():
         drug_id_dict[drug_profile[i][-1]] = i
     x_slide = []
     for i in range(0, edge):
-    #for i in range(0, 9000):
+    #for i in range(0, 1000):
         print(i)
         con_temp = np.r_[drug_profile[drug_id_dict[y[i][0]]][:-1], drug_profile[drug_id_dict[y[i][1]]][:-1]].transpose()
         con = np.r_[con_temp, np.array(y[i][2])]
@@ -103,18 +103,21 @@ def mydist(p1, p2):
 
 #Z = linkage(X, 'ward')
 Z = linkage(X, method='single', metric=mydist, optimal_ordering=False)
+print(Z)
+np.savetxt("HC_process.txt", Z, fmt='%d %d %.4f %d')
 print('linkage finished!')
 
 c, coph_dists = cophenet(Z, pdist(X))
 print(c)
 
+'''
 # Scale down the tree: dendrogram
 plt.figure(figsize=(50, 10))
 plt.title('Hierarchical Clustering Dendrogram')
 plt.xlabel('sample index')
 plt.ylabel('distance')
 dendrogram(Z, leaf_rotation=90., leaf_font_size=8.)
-plt.show()
+#plt.show()
 plt.savefig('Hierarchical Clustering Dendrogram.png')
 
 plt.title('Hierarchical Clustering Dendrogram (truncated)')
@@ -137,22 +140,27 @@ plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 7).png')
 max_d = 6
 fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10, max_d=max_d)
 #plt.show()
-plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 6).png')
+plt.savefig('Hierarchical Clustering Dendrogram (fancy d = 6.png')
+'''
 
 # We can use the FCLUSTER equation to get the cluster information:
 # If we already know the maximum threshold from the tree, 
 # we can get the cluster subscript for each experimental sample by using the following code  
-max_d = 50
+max_d = 6
 clusters = fcluster(Z, max_d, criterion='distance')
 print(clusters)
 
+'''
 # If we already know that we will end up with two clusters, we can get the cluster index like this:  
 k = 2
 fcluster(Z, k, criterion='maxclust')
+'''
 
+'''
 # If the number of features in your experimental sample is small, you can visualize your cluster results: 
 # have more samples: using T-SNE
 plt.figure(figsize=(10, 8))
 plt.scatter(X[:, 0], X[:, 1], c=clusters, cmap='prism')
 plt.savefig('cluster results.png')
 #plt.show()
+'''
