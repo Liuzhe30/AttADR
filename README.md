@@ -1,5 +1,5 @@
-# attddi
-A ddi classfication tool using self-attention-based deep learning.
+# ddiAMBT
+A ddi classfication tool using attentional MLP-based binary tree.
 
 <p align="center"><img width="80%" src="ddiAMBT.png" /></p>
 
@@ -11,7 +11,7 @@ A ddi classfication tool using self-attention-based deep learning.
 
 ### Download attddi
 ```shell
-git-lfs clone https://github.com/Liuzhe30/attddi
+git-lfs clone https://github.com/Liuzhe30/ddiAMBT
 ```
 
 ### Dataset Preparation
