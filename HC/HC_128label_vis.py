@@ -25,6 +25,7 @@ e = 27  # transporter
 # more beautiful tree: showing the distance between clusters makes the tree graph more intuitive
 def fancy_dendrogram(*args, **kwargs):
     max_d = kwargs.pop('max_d', None)
+    print(max_d)
     if max_d and 'color_threshold' not in kwargs:
         kwargs['color_threshold'] = max_d
     annotate_above = kwargs.pop('annotate_above', 0)
@@ -45,7 +46,6 @@ def fancy_dendrogram(*args, **kwargs):
             plt.axhline(y=max_d, c='k')
     return ddata
 
-
 '''
 X = np.array([[1,3,5,2,[0,1,0,0]],
               [3,7,8,3,[0,1,0,0]],
@@ -64,9 +64,9 @@ X = np.array([[1,3,0,1,2,1],
               '''
 
 def data_generator():
-    drug_profile = np.load('data/feature.npy') # N * (a + b + c + d + e)
+    drug_profile = np.load('../data/feature.npy') # N * (a + b + c + d + e)
     #similarity_mat = np.loadtxt('data/similarity_mat.npy') # 5N * N
-    y = np.load('data/label.npy')  # edge * 3
+    y = np.load('../data/label.npy')  # edge * 3
     drug_id_dict = {}
     for i in range(0, len(drug_profile)):
         drug_id_dict[drug_profile[i][-1]] = i
@@ -84,8 +84,16 @@ def data_generator():
     
     return X
 
+'''
 X = data_generator()
+np.savetxt("HC_data_All.txt", X, fmt='%d')
+'''
+#X = np.loadtxt("HC_data_All.txt")
+'''
+with open("HC_data_All.txt") as f:
+    X = np.array([line.strip().split() for line in f],int)
 print(X)
+'''
 
 #con = np.concatenate(feature, label)
 #print(con[0])
@@ -102,35 +110,41 @@ def mydist(p1, p2):
     return np.vdot(diff, diff) ** 0.5
 
 #Z = linkage(X, 'ward')
+'''
 Z = linkage(X, method='single', metric=mydist, optimal_ordering=False)
 print(Z)
 np.savetxt("HC_process.txt", Z, fmt='%d %d %.4f %d')
 print('linkage finished!')
-
-c, coph_dists = cophenet(Z, pdist(X))
-print(c)
-
 '''
+#Z = np.loadtxt("HC_process.txt")
+Z = np.array([[0, 1, 1, 2],
+     [2, 3, 2, 2],
+     [1, 4, 1.5, 3],
+     [1, 3, 4, 5]
+])
+
+print(Z)
+
+
 # Scale down the tree: dendrogram
 plt.figure(figsize=(50, 10))
+'''
 plt.title('Hierarchical Clustering Dendrogram')
 plt.xlabel('sample index')
 plt.ylabel('distance')
 dendrogram(Z, leaf_rotation=90., leaf_font_size=8.)
 #plt.show()
 plt.savefig('Hierarchical Clustering Dendrogram.png')
+'''
 
 plt.title('Hierarchical Clustering Dendrogram (truncated)')
 plt.xlabel('sample index or (cluster size)')
 plt.ylabel('distance')
-dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True)
-#plt.show()
+fancy_dendrogram(Z, truncate_mode='lastp', p=74, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10)
+plt.show()
 plt.savefig('Hierarchical Clustering Dendrogram (truncated).png')
 
-fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10)
-#plt.show()
-plt.savefig('Hierarchical Clustering Dendrogram (truncated).png')
-
+'''
 # Select the critical distance to determine the number of clusters
 max_d = 7
 fancy_dendrogram(Z, truncate_mode='lastp', p=12, leaf_rotation=90., leaf_font_size=12., show_contracted=True, annotate_above=10, max_d=max_d)

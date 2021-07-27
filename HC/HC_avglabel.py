@@ -64,15 +64,15 @@ X = np.array([[1,3,0,1,2,1],
               '''
 
 def data_generator():
-    drug_profile = np.load('data/feature.npy') # N * (a + b + c + d + e)
+    drug_profile = np.load('../data/feature.npy') # N * (a + b + c + d + e)
     #similarity_mat = np.loadtxt('data/similarity_mat.npy') # 5N * N
-    y = np.load('data/label.npy')  # edge * 3
+    y = np.load('../data/label.npy')  # edge * 3
     drug_id_dict = {}
     for i in range(0, len(drug_profile)):
         drug_id_dict[drug_profile[i][-1]] = i
     x_slide = []
     for i in range(0, edge):
-    #for i in range(0, 9000):
+    #for i in range(0, 5):
         print(i)
         con_temp = np.r_[drug_profile[drug_id_dict[y[i][0]]][:-1], drug_profile[drug_id_dict[y[i][1]]][:-1]].transpose()
         con = np.r_[con_temp, np.array(y[i][2])]
@@ -88,6 +88,7 @@ def data_avg(X):
     avg_dict = {}
     new_matrix = []
     for i in range(0, edge):
+    #for i in range(0, 5):
         if(X[i][-1] not in avg_dict.keys()):
             avg_dict[X[i][-1]] = []
         avg_dict[X[i][-1]].append(X[i][:-1])
@@ -108,10 +109,12 @@ def data_avg(X):
     
     return X_avg
 
-X = data_generator()
-print(X)
+with open("HC_data_All.txt") as f:
+    X = np.array([line.strip().split() for line in f],int)
+#print(X)
 X_avg = data_avg(X)
-print(X_avg)
+np.savetxt("HC_data_avg.txt", X_avg)
+#print(X_avg)
 
 #con = np.concatenate(feature, label)
 #print(con[0])
