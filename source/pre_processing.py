@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 np.set_printoptions(threshold=np.inf)
+import json
 #np.genfromtxt('col.txt',dtype='str')
 
 smile_npy = np.load('../data/feature_numpy/smile.npy')
@@ -21,12 +22,20 @@ d = 398  # pathway
 e = 27  # transporter
 
 # feature concatenation
+feature_dict = {}
 generated = np.c_[np.c_[np.c_[np.c_[smile_npy, target_npy], enzyme_npy], pathway_npy], transporter_npy]
 print(generated.shape)
 drug_list = np.genfromtxt('../data/feature_list/TotalDrugID.txt',dtype='str')
 feature = np.c_[generated, drug_list]
-np.save('../data/feature.npy', feature)
+#np.save('../data/feature.npy', feature)
 print(feature.shape) # (3037, 3243)
+for i in range(feature.shape[0]):
+    feature_dict[feature[i][-1]] = feature[i][0:-1].tolist()
+#print(feature_dict)
+json_str = json.dumps(feature_dict)
+with open('../data/feature.json', 'w') as json_file:
+    json_file.write(json_str)
+
 
 # label recreate
 label_list = []
