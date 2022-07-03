@@ -2,6 +2,7 @@ import numpy as np
 import csv
 np.set_printoptions(threshold=np.inf)
 import json
+from sklearn.utils import shuffle
 #np.genfromtxt('col.txt',dtype='str')
 
 smile_npy = np.load('../data/feature_numpy/smile.npy')
@@ -51,6 +52,7 @@ with open('../data/label_ddi/ddi_label.csv', 'r') as file:
         #print(idx)
         line = file.readline()
 label = np.array(label_list)
-np.save('../data/pair_label.npy', label)
+label_shuffle = shuffle(label)
+np.save('../data/pair_label.npy', label_shuffle)
 print(label.shape) # (122999, 3)
     
