@@ -1,0 +1,149 @@
+,drugbank_id,Psychiatric_drug
+1,DB00334,Olanzapine 
+2,DB06016,Cariprazine hydrochloride 
+3,DB00334,Olanzapine pamoate 
+4,DB00433,Prochlorperazine maleate 
+5,DB08815,Lurasidone hydrochloride 
+6,DB00408,Loxapine succinate 
+7,DB01267,Paliperidone 
+8,DB00623,Fluphenazine decanoate 
+9,DB00502,Haloperidol decanoate 
+10,DB00679,Thioridazine hydrochloride 
+11,DB00831,Trifluoperazine hydrochloride 
+12,DB00477,Chlorpromazine hydrochloride 
+13,DB01224,Quetiapine fumarate 
+14,DB01267,Paliperidone palmitate 
+15,DB00734,Risperidone 
+16,DB00246,Ziprasidone hydrochloride 
+17,DB00246,Ziprasidone mesylate 
+18,DB06216,Asenapine maleate 
+19,DB00408,Loxapine 
+20,DB01238,Aripiprazole 
+21,DB06700,Aripiprazole hydrate 
+22,DB06077,Lumateperone tosylate 
+23,DB01618,Molindone hydrochloride 
+24,DB06288,Olanzapine and samidorphan
+25,DB00363,Clozapine 
+26,DB06216,Asenapine 
+27,DB01623,Thiothixene 
+28,DB09128,Brexpiprazole 
+29,DB00502,Haloperidol lactate
+30,DB14185,Aripiprazole lauroxil 
+31,DB00850,Perphenazine 
+32,DB14509,Lithium carbonate 
+33,DB04599,Olanzapine and fluoxetine hydrochloride
+34,DB00472,Fluoxetine hydrochloride 
+35,DB00313,Divalproex sodium 
+36,DB00555,Lamotrigine 
+37,DB01576,Perphenazine and amitriptyline hydrochloride
+38,DB00476,Duloxetine hydrochloride 
+39,DB01247,Isocarboxazid 
+40,DB00540,Nortriptyline hydrochloride 
+41,DB01149,Nefazodone hydrochloride 
+42,DB01156,Bupropion hydrobromide 
+43,DB00321,Amitriptyline hydrochloride 
+44,DB00726,Trimipramine maleate 
+45,DB01175,Escitalopram oxalate 
+46,DB08918,Levomilnacipran hydrochloride 
+47,DB00715,Paroxetine mesylate 
+48,DB00344,Protriptyline hydrochloride 
+49,DB01104,Sertraline hydrochloride 
+50,DB00458,Imipramine hydrochloride 
+51,DB00656,Trazodone hydrochloride 
+52,DB00285,Venlafaxine hydrochloride 
+53,DB06700,Desvenlafaxine succinate 
+54,DB01156,Bupropion hydrochloride 
+55,DB06700,Desvenlafaxine 
+56,DB00715,Paroxetine hydrochloride 
+57,DB00215,Citalopram hydrobromide 
+58,DB06684,Vilazodone hydrochloride 
+59,DB01069,Desvenlafaxine succinate anhydrous
+60,DB09068,Vortioxetine hydrobromide 
+61,DB00458,Imipramine pamoate 
+62,DB01151,Desipramine hydrochloride 
+63,DB00715,Paroxetine hydrochloride hemihydrate 
+64,DB00752,Tranylcypromine sulfate 
+65,DB00370,Mirtazapine 
+66,DB00543,Amoxapine 
+67,DB01037,Selegiline 
+68,DB00934,Maprotiline hydrochloride 
+69,DB00829,Diazepam 
+70,DB00490,Buspirone hydrochloride 
+71,DB00404,Alprazolam 
+72,DB00628,Clorazepate dipotassium 
+73,DB01174,Phenobarbital sodium 
+74,DB01068,Clonazepam 
+75,DB00176,Fluvoxamine maleate 
+76,DB01242,Clomipramine hydrochloride 
+77,DB01255,Lisdexamfetamine dimesylate 
+78,DB00704,Naltrexone hydrochloride 
+79,DB00704,Naltrexone 
+80,DB00659,Acamprosate calcium 
+81,DB00822,Disulfiram 
+82,DB00475,Chlordiazepoxide hydrochloride 
+83,DB00231,Temazepam 
+84,DB01589,Quazepam 
+85,DB00897,Triazolam 
+86,DB01215,Estazolam 
+87,DB01142,Doxepin hydrochloride 
+88,DB11951,Lemborexant 
+89,DB00425,Zolpidem tartrate 
+90,DB09034,Suvorexant 
+91,DB00980,Ramelteon 
+92,DB00402,Eszopiclone 
+93,DB00962,Zaleplon 
+94,DB00418,Secobarbital sodium 
+95,DB01075,Diphenhydramine hydrochloride 
+96,DB14754,Solriamfetol hydrochloride 
+97,DB11642,Pitolisant hydrochloride 
+98,DB00182,Amphetamine sulfate 
+99,DB01440,"Calcium oxybate, magnesium oxybate, potassium oxybate and sodium"
+100,DB06413,Armodafinil 
+101,DB09072,Sodium oxybate 
+102,DB00422,Methylphenidate hydrochloride 
+103,DB00745,Modafinil 
+104,DB01576,Dextroamphetamine sulfate 
+105,DB08872,Gabapentin enacarbil 
+106,DB00268,Ropinirole hydrochloride 
+107,DB05271,Rotigotine 
+108,DB00413,Pramipexole dihydrochloride 
+109,DB01239,chlorprothixene
+110,DB00875,Flupentixol
+111,DB13256,Clothiapine
+112,DB01100,Pimozide
+113,DB04842,Fluspirilene
+114,DB01069,Promethazine
+115,DB09225,zotepine
+116,DB06144,sertindole
+117,DB06288,Amisulpride
+118,DB04946,iloperidone
+119,DB15357,Xanomeline
+120,DB00843,donepezil
+121,DB11473,Metrifonate
+122,DB00674,galantamine
+123,DB00575,Clonidine
+124,DB01018,Guanfacine
+125,DB12551,Idazoxan
+126,DB00376,Trihexyphenidyl
+127,DB00245,Benzatropine
+128,DB00234,Reboxetine
+129,DB12833,tandospirone
+130,DB09289,Tianeptine
+131,DB00564,Carbamazepine
+132,DB00776,Oxcarbazepine
+133,DB00273,Topiramate
+134,DB00690,Flurazepam
+135,DB00989,rivastigmine
+136,DB04864,Huperzine A
+137,DB00382,Tacrine
+138,DB01043,Memantine
+139,DB09210,Piracetam
+140,DB04599,Aniracetam
+141,DB01230,Pemoline
+142,DB01242,Clomipramine
+143,DB01171,Moclobemide
+144,DB00909,Zonisamide
+145,DB01202,Levetiracetam
+146,DB00906,Tiagabine
+147,DB00574,fenfluramine
+148,DB00391,sulpride
