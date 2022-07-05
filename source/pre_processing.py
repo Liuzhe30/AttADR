@@ -41,18 +41,21 @@ with open('../data/feature.json', 'w') as json_file:
 # label recreate
 label_list = []
 idx = 0
-with open('../data/label_ddi/ddi_label.csv', 'r') as file:
+with open('../data/label_ddi/positive_pairs.csv', 'r') as file:
     line = file.readline()
     line = file.readline()
     while line:
-        label_list.append([line.split(',')[2], line.split(',')[3], line.split(',')[-1]])
-        #print([line.split(',')[3], line.split(',')[4], line.split(',')[0]])
-        #print(line.split(',')[-1].strip())
-        #idx += 1
-        #print(idx)
+        label_list.append([line.split(',')[0], line.split(',')[1], line.split(',')[-1]])
         line = file.readline()
+with open('../data/label_ddi/negtive_pairs.csv', 'r') as file:
+    line = file.readline()
+    line = file.readline()
+    while line:
+        label_list.append([line.split(',')[0], line.split(',')[1], line.split(',')[-1]])
+        line = file.readline()        
+        
 label = np.array(label_list)
 label_shuffle = shuffle(label)
 np.save('../data/pair_label.npy', label_shuffle)
-print(label.shape) # (122999, 3)
+print(label.shape) # (431086, 3)
     
