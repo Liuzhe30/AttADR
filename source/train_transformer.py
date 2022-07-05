@@ -81,6 +81,26 @@ def generate_batch(feature_dict, pair_label, batch_size):
 
             yield([x, mask], y, sample_weights)
 
+def generate_valid_test(feature_dict, pair_label):
+
+    dataX_batch, dataY_batch = [], []
+    for i in range(len(pair_label)):
+        drugA = pair_label[i][0]
+        drugB = pair_label[i][1]
+        label = pair_label[i][2]
+
+        drugA_feature = np.array(feature_dict[drugA] + [0, 0, 0, 0, 0, 0, 0, 0])
+        drugB_feature = np.array(feature_dict[drugB] + [0, 0, 0, 0, 0, 0, 0, 0])
+        dataX_batch.append(np.c_[drugA_feature, drugB_feature])
+        dataY_batch.append(to_categorical(label,2))
+
+    x = np.array(dataX_batch)
+    y = np.array(dataY_batch)
+    mask = np.c_[np.ones((len(pair_label), sum_feature)), np.zeros((len(pair_label), 8))]
+
+    return [x, mask], y
+
+
 def create_padding_mask(seq):
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
     print(seq.shape)
@@ -115,8 +135,8 @@ class Metrics(tf.keras.callbacks.Callback):
         
 # set args
 parser = argparse.ArgumentParser(description="DDI stucture.")
-parser.add_argument('--epochs', default=10, type=int)
-parser.add_argument('--batch_size', default=32, type=int)
+parser.add_argument('--epochs', default=1, type=int)
+parser.add_argument('--batch_size', default=16, type=int)
 parser.add_argument('--lr', default=0.001, type=float,
                         help="Initial learning rate")
 parser.add_argument('--lr_decay', default=0.05, type=float,
@@ -135,10 +155,14 @@ if not os.path.exists(args.save_dir):
 # -----prepare datasets-----
 with open("../data/feature.json",'r') as load_f:
     feature_dict = json.load(load_f) # 3037 keys with each key a 3243-d list  
-pair_label = np.load("../data/pair_label.npy") # (122999, 3) each ddi (drug ID1, drug ID2, label)
-train_set = pair_label[0:120000, :]
-valid_set = pair_label[120000:121499, :]
-test_set = pair_label[121499:122999, :]
+pair_label = np.load("../data/pair_label.npy") # (431086, 3) each ddi (drug ID1, drug ID2, label)
+train_set = pair_label[0:430000, :]
+valid_set = pair_label[430000:430586, :]
+test_set = pair_label[430586:431086, :]
+valid_data = generate_valid_test(feature_dict, valid_set)
+test_data = generate_valid_test(feature_dict, test_set)
+#print(valid_data)
+#print(test_data)
 
 # ---------------------------------------build bigbird model--------------------------------------------------------
 input1 = tf.keras.layers.Input(shape=(maxlen, 2), name = 'input-feature')
@@ -147,21 +171,23 @@ mask = create_padding_mask(input2)
 
 embedding_layer_bet = TokenAndPositionEmbedding(maxlen, vocab_size, embed_dim, pos_embed_dim, seq_embed_dim_bet)
 trans_block_bet1 = TransformerBlock(embed_dim, num_heads, ff_dim)
+trans_block_bet2 = TransformerBlock(embed_dim, num_heads, ff_dim)
+trans_block_bet3 = TransformerBlock(embed_dim, num_heads, ff_dim)
 
 bet = embedding_layer_bet([input2,input1])
 print('embedding_layer_bet.get_shape()', bet.get_shape()) # 
 
-trans_layer1 = trans_block_bet1(bet, mask)
+bet = trans_block_bet1(bet, mask)
+#bet = trans_block_bet2(bet, mask)
+#bet = trans_block_bet3(bet, mask)
 
-
-print('trans_layer1.get_shape()', trans_layer1.get_shape()) 
-mut_bew = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(trans_layer1)
+print('trans_layer1.get_shape()', bet.get_shape()) 
+mut_bew = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
 mut_bew = tf.keras.layers.GlobalAveragePooling1D()(mut_bew)
 output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(mut_bew)
 
 model = tf.keras.models.Model(inputs=[input1, input2], outputs=output)
 model.summary()
-
 
 # compile and fit
 # callbacks
@@ -178,10 +204,10 @@ model.compile(loss='mse', optimizer='adam', metrics=['acc'])
 history = model.fit(generate_batch(feature_dict, train_set, args.batch_size), # Tf2 new feature
           steps_per_epoch = len(train_set)/args.batch_size,
           epochs = args.epochs, verbose=1,
-          validation_data = generate_batch(feature_dict, valid_set, args.batch_size),
+          validation_data = generate_valid_test(feature_dict, valid_set),
           validation_steps = len(valid_set),
           #callbacks = [log, tensorboard, checkpoint, lr_decay],
-          callbacks = [Metrics(valid_data=(generate_batch(feature_dict, valid_set, args.batch_size))),
+          callbacks = [Metrics(valid_data=(generate_valid_test(feature_dict, valid_set))),
           log, checkpoint, lr_decay],
           shuffle = True,
           #batch_size=args.batch_size,

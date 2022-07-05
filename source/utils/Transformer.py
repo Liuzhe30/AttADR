@@ -94,6 +94,9 @@ class TransformerBlock(layers.Layer):
         self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
         self.dropout1 = layers.Dropout(rate)
         self.dropout2 = layers.Dropout(rate)
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.ff_dim = ff_dim
 
     def call(self, inputs, mask=None, training=True):
         attn_output = self.att(inputs, mask)
@@ -106,9 +109,9 @@ class TransformerBlock(layers.Layer):
     def get_config(self):
         config = super().get_config().copy()
         config.update({
-              'embed_dim': embed_dim,
-              'num_heads': num_heads,
-              'ff_dim': ff_dim,
+              'embed_dim': self.embed_dim,
+              'num_heads': self.num_heads,
+              'ff_dim': self.ff_dim,
         })
         return config
     
@@ -118,6 +121,11 @@ class TokenAndPositionEmbedding(layers.Layer):
         self.token_emb = layers.Embedding(input_dim=vocab_size, output_dim=seq_embed_dim)
         self.pos_emb = layers.Embedding(input_dim=maxlen, output_dim=pos_embed_dim, trainable=False,
                                         weights=[self.get_pos_matrix(maxlen, pos_embed_dim)])
+        self.maxlen = maxlen
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+        self.pos_embed_dim = pos_embed_dim
+        self.seq_embed_dim = seq_embed_dim
 
     def call(self, x):
         mask, seq = x
@@ -141,10 +149,10 @@ class TokenAndPositionEmbedding(layers.Layer):
     def get_config(self):
         config = super().get_config().copy()
         config.update({
-            'maxlen': maxlen,
-            'vocab_size': vocab_size,
-            'embed_dim': embed_dim,
-            'pos_embed_dim': pos_embed_dim,
-            'seq_embed_dim': seq_embed_dim,
+            'maxlen': self.maxlen,
+            'vocab_size': self.vocab_size,
+            'embed_dim': self.embed_dim,
+            'pos_embed_dim': self.pos_embed_dim,
+            'seq_embed_dim': self.seq_embed_dim,
         })
         return config
