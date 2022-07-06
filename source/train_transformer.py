@@ -49,9 +49,9 @@ ff_dim = 64
 pos_embed_dim = 64
 seq_embed_dim_bet = 62
 
-def generate_batch(feature_dict, pair_label, batch_size):
+def generate_batch(feature_dict, psy_list, pair_label, batch_size):
     while 1:
-        for i in range(len(pair_label) - batch_size): # 122999
+        for i in range(len(pair_label) - batch_size): # 380480
             dataX_batch, dataY_batch, weights = [], [], []  # (batch_size, 3242, 2) , (batch_size, 2)
             
             for j in range(i, i + batch_size):
@@ -60,20 +60,30 @@ def generate_batch(feature_dict, pair_label, batch_size):
                 drugB = pair_label[j][1]
                 label = pair_label[j][2]
                 
-                drugA_feature = np.array(feature_dict[drugA] + [0, 0, 0, 0, 0, 0, 0, 0])
-                drugB_feature = np.array(feature_dict[drugB] + [0, 0, 0, 0, 0, 0, 0, 0])
+                # check psydrug 0/1
+                if(drugA in psy_list):
+                    flag_A = 1
+                else:
+                    flag_A = 0
+                if(drugB in psy_list):
+                    flag_B = 1
+                else:
+                    flag_B = 0
+                
+                drugA_feature = np.array(feature_dict[drugA] + [flag_A] + [0, 0, 0, 0, 0, 0, 0])
+                drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
                 
                 dataX_batch.append(np.c_[drugA_feature, drugB_feature])
                 dataY_batch.append(to_categorical(label,2))
                 if(int(label) == 0):
                     weights.append(1)
                 elif(int(label) == 1):
-                    weights.append(3)
+                    weights.append(2)
             
             i += batch_size
             x = np.array(dataX_batch)
             y = np.array(dataY_batch)
-            mask = np.c_[np.ones((batch_size, sum_feature)), np.zeros((batch_size, 8))]
+            mask = np.c_[np.ones((batch_size, sum_feature + 1)), np.zeros((batch_size, 7))]
             sample_weights = np.array(weights)
             #print(mask.shape) #(batch_size, 3250)
             #print(x.shape) # (batch_size, 2)
@@ -81,22 +91,33 @@ def generate_batch(feature_dict, pair_label, batch_size):
 
             yield([x, mask], y, sample_weights)
 
-def generate_valid_test(feature_dict, pair_label):
+def generate_valid_test(feature_dict, psy_list, pair_label):
 
     dataX_batch, dataY_batch = [], []
     for i in range(len(pair_label)):
         drugA = pair_label[i][0]
         drugB = pair_label[i][1]
         label = pair_label[i][2]
-
-        drugA_feature = np.array(feature_dict[drugA] + [0, 0, 0, 0, 0, 0, 0, 0])
-        drugB_feature = np.array(feature_dict[drugB] + [0, 0, 0, 0, 0, 0, 0, 0])
+        
+        # check psydrug 0/1
+        if(drugA in psy_list):
+            flag_A = 1
+        else:
+            flag_A = 0
+        if(drugB in psy_list):
+            flag_B = 1
+        else:
+            flag_B = 0
+        
+        drugA_feature = np.array(feature_dict[drugA] + [flag_A] + [0, 0, 0, 0, 0, 0, 0])
+        drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
+        
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
         dataY_batch.append(to_categorical(label,2))
 
     x = np.array(dataX_batch)
     y = np.array(dataY_batch)
-    mask = np.c_[np.ones((len(pair_label), sum_feature)), np.zeros((len(pair_label), 8))]
+    mask = np.c_[np.ones((len(pair_label), sum_feature + 1)), np.zeros((len(pair_label), 7))]
 
     return [x, mask], y
 
@@ -135,7 +156,7 @@ class Metrics(tf.keras.callbacks.Callback):
         
 # set args
 parser = argparse.ArgumentParser(description="DDI stucture.")
-parser.add_argument('--epochs', default=1, type=int)
+parser.add_argument('--epochs', default=5, type=int)
 parser.add_argument('--batch_size', default=16, type=int)
 parser.add_argument('--lr', default=0.001, type=float,
                         help="Initial learning rate")
@@ -154,13 +175,23 @@ if not os.path.exists(args.save_dir):
     
 # -----prepare datasets-----
 with open("../data/feature.json",'r') as load_f:
-    feature_dict = json.load(load_f) # 3037 keys with each key a 3243-d list  
-pair_label = np.load("../data/pair_label.npy") # (431086, 3) each ddi (drug ID1, drug ID2, label)
-train_set = pair_label[0:430000, :]
-valid_set = pair_label[430000:430586, :]
-test_set = pair_label[430586:431086, :]
-valid_data = generate_valid_test(feature_dict, valid_set)
-test_data = generate_valid_test(feature_dict, test_set)
+    feature_dict = json.load(load_f) # 3037 keys with each key a 3243-d list 
+
+# psydrug list
+psy_list = []
+with open('../data/label_ddi/psychiatric.csv', 'r') as file:
+    line = file.readline()
+    line = file.readline()
+    while line:
+        psy_list.append(line.split(',')[1])
+        line = file.readline()
+
+pair_label = np.load("../data/pair_label.npy") # (380480, 3) each ddi (drug ID1, drug ID2, label)
+train_set = pair_label[0:379480, :]
+valid_set = pair_label[379480:379980, :] # 500
+test_set = pair_label[379980:380480, :] # 500
+valid_data = generate_valid_test(feature_dict, psy_list, valid_set)
+test_data = generate_valid_test(feature_dict, psy_list, test_set)
 #print(valid_data)
 #print(test_data)
 
@@ -178,13 +209,14 @@ bet = embedding_layer_bet([input2,input1])
 print('embedding_layer_bet.get_shape()', bet.get_shape()) # 
 
 bet = trans_block_bet1(bet, mask)
-#bet = trans_block_bet2(bet, mask)
+bet = trans_block_bet2(bet, mask)
 #bet = trans_block_bet3(bet, mask)
 
 print('trans_layer1.get_shape()', bet.get_shape()) 
-mut_bew = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
-mut_bew = tf.keras.layers.GlobalAveragePooling1D()(mut_bew)
-output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(mut_bew)
+#bet = tf.keras.layers.Conv1D(7 ,1, kernel_initializer='he_uniform')(bet)
+bet = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
+bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
+output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
 
 model = tf.keras.models.Model(inputs=[input1, input2], outputs=output)
 model.summary()
@@ -201,13 +233,13 @@ lr_decay = tf.keras.callbacks.LearningRateScheduler(schedule=lambda epoch: args.
 # Train the model and save it
 model.compile(loss='mse', optimizer='adam', metrics=['acc'])
 
-history = model.fit(generate_batch(feature_dict, train_set, args.batch_size), # Tf2 new feature
+history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch_size), # Tf2 new feature
           steps_per_epoch = len(train_set)/args.batch_size,
           epochs = args.epochs, verbose=1,
-          validation_data = generate_valid_test(feature_dict, valid_set),
+          validation_data = generate_valid_test(feature_dict, psy_list, valid_set),
           validation_steps = len(valid_set),
           #callbacks = [log, tensorboard, checkpoint, lr_decay],
-          callbacks = [Metrics(valid_data=(generate_valid_test(feature_dict, valid_set))),
+          callbacks = [Metrics(valid_data=(generate_valid_test(feature_dict, psy_list, valid_set))),
           log, checkpoint, lr_decay],
           shuffle = True,
           #batch_size=args.batch_size,
