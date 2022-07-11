@@ -29,6 +29,10 @@ from sklearn.utils import shuffle
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
 tf.compat.v1.disable_eager_execution()
 
+from tensorflow.keras import backend as K
+K.set_learning_phase(1)
+is_training = K.learning_phase()
+
 # set paramaters
 class_num = 2  # type of ddis
 N = 3037  # number of drugs
@@ -58,7 +62,7 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
                 
                 drugA = pair_label[j][0]
                 drugB = pair_label[j][1]
-                label = pair_label[j][2]
+                label = int(pair_label[j][2].strip())
                 
                 # check psydrug 0/1
                 if(drugA in psy_list):
@@ -74,11 +78,12 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
                 drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
                 
                 dataX_batch.append(np.c_[drugA_feature, drugB_feature])
-                dataY_batch.append(to_categorical(label,2))
+                #dataY_batch.append(to_categorical(label,2))
+                dataY_batch.append(label)
                 if(int(label) == 0):
                     weights.append(1)
                 elif(int(label) == 1):
-                    weights.append(2)
+                    weights.append(3)
             
             i += batch_size
             x = np.array(dataX_batch)
@@ -89,7 +94,8 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
             #print(x.shape) # (batch_size, 2)
             #print(y.shape) # (batch_size, 2)
 
-            yield([x, mask], y, sample_weights)
+            #yield([x, mask], y, sample_weights)
+            yield([x, mask], y)
 
 def generate_valid_test(feature_dict, psy_list, pair_label):
 
@@ -97,7 +103,7 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
     for i in range(len(pair_label)):
         drugA = pair_label[i][0]
         drugB = pair_label[i][1]
-        label = pair_label[i][2]
+        label = int(pair_label[i][2].strip())
         
         # check psydrug 0/1
         if(drugA in psy_list):
@@ -113,7 +119,8 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
         drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
         
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
-        dataY_batch.append(to_categorical(label,2))
+        #dataY_batch.append(to_categorical(label,2))
+        dataY_batch.append(label)
 
     x = np.array(dataX_batch)
     y = np.array(dataY_batch)
@@ -157,8 +164,8 @@ class Metrics(tf.keras.callbacks.Callback):
 # set args
 parser = argparse.ArgumentParser(description="DDI stucture.")
 parser.add_argument('--epochs', default=5, type=int)
-parser.add_argument('--batch_size', default=16, type=int)
-parser.add_argument('--lr', default=0.001, type=float,
+parser.add_argument('--batch_size', default=32, type=int)
+parser.add_argument('--lr', default=0.002, type=float,
                         help="Initial learning rate")
 parser.add_argument('--lr_decay', default=0.05, type=float,
                         help="The value multiplied by lr at each epoch. Set a larger value for larger epochs")            
@@ -209,14 +216,17 @@ bet = embedding_layer_bet([input2,input1])
 print('embedding_layer_bet.get_shape()', bet.get_shape()) # 
 
 bet = trans_block_bet1(bet, mask)
-bet = trans_block_bet2(bet, mask)
+#bet = trans_block_bet2(bet, mask)
 #bet = trans_block_bet3(bet, mask)
 
-print('trans_layer1.get_shape()', bet.get_shape()) 
-#bet = tf.keras.layers.Conv1D(7 ,1, kernel_initializer='he_uniform')(bet)
-bet = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
+print('trans_layer1.get_shape()', bet.get_shape())
+bet = tf.keras.layers.BatchNormalization()(bet, training = True)
+bet = tf.keras.layers.Dense(512, activation = 'relu')(bet)
+bet = tf.keras.layers.Conv1D(32, 4, kernel_initializer='he_uniform')(bet)
+#bet = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
 bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
-output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
+#output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
+output = tf.keras.layers.Dense(1, activation = 'sigmoid', name = 'output_softmax')(bet)
 
 model = tf.keras.models.Model(inputs=[input1, input2], outputs=output)
 model.summary()
@@ -230,8 +240,9 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch
                                        save_best_only=True, save_weights_only=True, verbose=1)        
 lr_decay = tf.keras.callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
 
+class_weights = {0:1, 1:3}
 # Train the model and save it
-model.compile(loss='mse', optimizer='adam', metrics=['acc'])
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
 
 history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch_size), # Tf2 new feature
           steps_per_epoch = len(train_set)/args.batch_size,
@@ -243,7 +254,8 @@ history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch
           log, checkpoint, lr_decay],
           shuffle = True,
           #batch_size=args.batch_size,
-          workers = 1).history
+          workers = 1,
+          class_weight = class_weights).history
 
 model.save_weights(args.save_dir + '/trained_weights.h5')
 model.save(args.save_dir + '/trained_model.h5')
