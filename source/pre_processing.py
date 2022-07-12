@@ -56,6 +56,7 @@ with open('../data/label_ddi/negtive_pairs.csv', 'r') as file:
         
 label = np.array(label_list)
 label_shuffle = shuffle(label)
-np.save('../data/pair_label.npy', label_shuffle)
+label_shuffle2 = shuffle(label_shuffle)
+np.save('../data/pair_label.npy', label_shuffle2)
 print(label.shape) # (380480, 3)
     

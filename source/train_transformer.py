@@ -36,7 +36,7 @@ is_training = K.learning_phase()
 # set paramaters
 class_num = 2  # type of ddis
 N = 3037  # number of drugs
-edge = 122999  # number of ddis
+edge = 380480  # number of ddis
 a = 167  # smile 
 b = 2314  # target
 c = 336  # enzyme
@@ -194,9 +194,9 @@ with open('../data/label_ddi/psychiatric.csv', 'r') as file:
         line = file.readline()
 
 pair_label = np.load("../data/pair_label.npy") # (380480, 3) each ddi (drug ID1, drug ID2, label)
-train_set = pair_label[0:379480, :]
-valid_set = pair_label[379480:379980, :] # 500
-test_set = pair_label[379980:380480, :] # 500
+train_set = pair_label[0:edge-1000, :]
+valid_set = pair_label[edge-1000:edge-500, :] # 500
+test_set = pair_label[edge-500:edge, :] # 500
 valid_data = generate_valid_test(feature_dict, psy_list, valid_set)
 test_data = generate_valid_test(feature_dict, psy_list, test_set)
 #print(valid_data)
@@ -236,11 +236,15 @@ model.summary()
 log = tf.keras.callbacks.CSVLogger(args.save_dir + '/log.csv')
 #tensorboard = tf.keras.callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs', histogram_freq=int(args.debug))
 #EarlyStopping = callbacks.EarlyStopping(monitor='val_cc2', min_delta=0.01, patience=5, verbose=0, mode='max', baseline=None, restore_best_weights=True)
-checkpoint = tf.keras.callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_acc', mode='max', #val_categorical_accuracy val_acc
-                                       save_best_only=True, save_weights_only=True, verbose=1)        
+checkpoint = tf.keras.callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', 
+                                        monitor='val_loss', 
+                                        mode='min', 
+                                        #val_categorical_accuracy val_acc
+                                        save_best_only=True, 
+                                        save_weights_only=True, verbose=1)        
 lr_decay = tf.keras.callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
 
-class_weights = {0:1, 1:3}
+class_weights = {0:1, 1:1}
 # Train the model and save it
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
 
@@ -250,8 +254,7 @@ history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch
           validation_data = generate_valid_test(feature_dict, psy_list, valid_set),
           validation_steps = len(valid_set),
           #callbacks = [log, tensorboard, checkpoint, lr_decay],
-          callbacks = [Metrics(valid_data=(generate_valid_test(feature_dict, psy_list, valid_set))),
-          log, checkpoint, lr_decay],
+          callbacks = [log, checkpoint, lr_decay],
           shuffle = True,
           #batch_size=args.batch_size,
           workers = 1,
