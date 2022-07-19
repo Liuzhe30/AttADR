@@ -69,7 +69,8 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
         drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
         
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
-        dataY_batch.append(to_categorical(label,2))
+        #dataY_batch.append(to_categorical(label,2))
+        dataY_batch.append(label)
 
     x = np.array(dataX_batch)
     y = np.array(dataY_batch)
@@ -85,6 +86,31 @@ def create_padding_mask(seq):
     # add extra dimensions to add the padding
     # to the attention logits.
     return  seq[:, tf.newaxis, tf.newaxis, :]# (batch_size, 1, 1, seq_len)
+
+class Metrics(tf.keras.callbacks.Callback):
+    def __init__(self, valid_data):
+        super(Metrics, self).__init__()
+        self.validation_data = valid_data
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        val_predict = np.argmax(self.model.predict(self.validation_data[0]), -1)
+        val_targ = self.validation_data[1]
+        if len(val_targ.shape) == 2 and val_targ.shape[1] != 1:
+            val_targ = np.argmax(val_targ, -1)
+
+        _val_acc = accuracy_score(val_targ, val_predict)
+        _val_f1 = f1_score(val_targ, val_predict, average='macro')
+        _val_recall = recall_score(val_targ, val_predict, average='macro')
+        _val_precision = precision_score(val_targ, val_predict, average='macro')
+        
+        logs['val_acc'] = _val_acc
+        logs['val_f1'] = _val_f1
+        logs['val_recall'] = _val_recall
+        logs['val_precision'] = _val_precision
+        print(" - val_acc: %f - val_f1: %f - val_precision: %f - val_recall: %f" % (_val_acc, _val_f1, _val_precision, _val_recall))
+        #print(" - val_f1: %f - val_precision: %f - val_recall: %f" % (_val_f1, _val_precision, _val_recall))
+        return
     
 # -----prepare datasets-----
 with open("../data/feature.json",'r') as load_f:
@@ -116,28 +142,40 @@ mask = create_padding_mask(input2)
 
 embedding_layer_bet = TokenAndPositionEmbedding(maxlen, vocab_size, embed_dim, pos_embed_dim, seq_embed_dim_bet)
 trans_block_bet1 = TransformerBlock(embed_dim, num_heads, ff_dim)
-trans_block_bet2 = TransformerBlock(embed_dim, num_heads, ff_dim)
-trans_block_bet3 = TransformerBlock(embed_dim, num_heads, ff_dim)
 
+# self-attention 1
 bet = embedding_layer_bet([input2,input1])
-print('embedding_layer_bet.get_shape()', bet.get_shape()) # 
+print('embedding_layer_bet.get_shape()', bet.get_shape()) # (3250, 64)
 
 bet = trans_block_bet1(bet, mask)
-bet = trans_block_bet2(bet, mask)
-#bet = trans_block_bet3(bet, mask)
+print('trans_layer1.get_shape()', bet.get_shape()) # (3250, 64)
+bet = tf.keras.layers.BatchNormalization()(bet, training = True)
 
-print('trans_layer1.get_shape()', bet.get_shape()) 
-bet = tf.keras.layers.Conv1D(32 ,4, kernel_initializer='he_uniform')(bet)
+# cnn block 1
+bet = tf.keras.layers.Conv1D(64, 3, kernel_initializer='he_uniform', activation='relu')(bet)
+bet = tf.keras.layers.BatchNormalization()(bet, training = True)
+bet = tf.keras.layers.Conv1D(128, 5, kernel_initializer='he_uniform', activation='relu')(bet)
+bet = tf.keras.layers.BatchNormalization()(bet, training = True)
+bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
+
+# self-attention 2
+attention2 = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=16)
+bet = attention2(bet, bet)
+
+# cnn block 2
 bet = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
 bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
-output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
+#output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
+output = tf.keras.layers.Dense(1, activation = 'sigmoid', name = 'output_softmax')(bet)
 
 model = tf.keras.models.Model(inputs=[input1, input2], outputs=output)
-model.load_weights("../models/trained_weights.h5")
+model.load_weights("../models/newstru-classweight-1-2-lr0.002/weights-04.h5")
 model.summary()
 
 pred = model.predict({"input-feature":x_test, "input-mask":mask_test}, batch_size = 16)
 print(pred)
+np.save("y_pred.npy", pred)
+np.save("y_true.npy", y_test)
 
 y_pred = []
 for item in pred:
@@ -145,38 +183,14 @@ for item in pred:
         y_pred.append(1)
     else:
         y_pred.append(0)
-pred = np.array(y_pred)
-#print(true)
-#print(pred)
 
-from sklearn.metrics import confusion_matrix, roc_curve, auc, accuracy_score, precision_score, recall_score, f1_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+true_sum = 0
+all_sum = 0
+for i in range(len(y_test)):
+    all_sum += 1
+    if(y_test[i] == y_pred[i]):
+        true_sum += 1
 
-print("acc = " + str(accuracy_score(true, pred)))
-print("precision = " + str(precision_score(true, pred)))
-print("recall = " + str(recall_score(true, pred)))
-print("f1_score = " + str(f1_score(true, pred)))
+print("acc: " + str(true_sum/all_sum))
+print(y_test)
 
-
-f,ax=plt.subplots()
-ax.set_title('confusion matrix',fontsize=12)
-cm = confusion_matrix(true, pred,labels=[0, 1])
-cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-sns.heatmap(cm,annot=True,ax=ax,cmap='Blues')
-plt.show()
-
-
-fpr,tpr,threshold = roc_curve(true, pred) 
-roc_auc = auc(fpr,tpr)
-lw = 2
-plt.plot(fpr, tpr, color='darkorange',
-         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc) 
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('Receiver operating characteristic example')
-plt.legend(loc="lower right")
-plt.show()
