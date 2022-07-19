@@ -169,7 +169,7 @@ bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
 output = tf.keras.layers.Dense(1, activation = 'sigmoid', name = 'output_softmax')(bet)
 
 model = tf.keras.models.Model(inputs=[input1, input2], outputs=output)
-model.load_weights("../models/newstru-classweight-1-2-lr0.002/weights-04.h5")
+model.load_weights("../models/trained_weights.h5")
 model.summary()
 
 pred = model.predict({"input-feature":x_test, "input-mask":mask_test}, batch_size = 16)
