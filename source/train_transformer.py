@@ -36,7 +36,7 @@ is_training = K.learning_phase()
 # set paramaters
 class_num = 2  # type of ddis
 N = 3037  # number of drugs
-edge = 380480  # number of ddis
+edge = 321496  # number of ddis
 a = 167  # smile 
 b = 2314  # target
 c = 336  # enzyme
@@ -140,7 +140,7 @@ parser.add_argument('--lr', default=0.002, type=float,
                         help="Initial learning rate")
 parser.add_argument('--lr_decay', default=0.05, type=float,
                         help="The value multiplied by lr at each epoch. Set a larger value for larger epochs")            
-parser.add_argument('--save_dir', default='../models/newstru-classweight-1-2-lr0.002/')
+parser.add_argument('--save_dir', default='../models/newdata-newstru-classweight-1-2-lr0.002/')
 parser.add_argument('-w', '--weights', default=None,
                         help="The path of the saved weights. Should be specified when testing")
 parser.add_argument('-t', '--testing', action='store_true',
@@ -164,7 +164,7 @@ with open('../data/label_ddi/psychiatric.csv', 'r') as file:
         psy_list.append(line.split(',')[1])
         line = file.readline()
 
-pair_label = np.load("../data/pair_label.npy") # (380480, 3) each ddi (drug ID1, drug ID2, label)
+pair_label = np.load("../data/pair_label_task1.npy") # (321496, 3) each ddi (drug ID1, drug ID2, label)
 train_set = pair_label[0:edge-1000, :]
 
 # data augmentation

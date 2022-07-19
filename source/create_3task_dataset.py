@@ -80,9 +80,9 @@ for item in pair_label:
 pair_task1_array = np.array(pair_task1)
 pair_test_task2_array = np.array(pair_test_task2)
 pair_test_task3_array = np.array(pair_test_task3)
-print(pair_task1_array.shape)# (332862, 3)
-print(pair_test_task2_array.shape)# (46388, 3)
-print(pair_test_task3_array.shape)# (1230, 3)
+print(pair_task1_array.shape) # (321496, 3)
+print(pair_test_task2_array.shape) # (57360, 3)
+print(pair_test_task3_array.shape) # (1624, 3)
 
 pair_task1_array_shuffle = shuffle(pair_task1_array)
 np.save("../data/pair_label_task1.npy", pair_task1_array_shuffle)
