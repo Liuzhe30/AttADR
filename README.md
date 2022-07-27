@@ -1,17 +1,17 @@
-# ddiAMBT
-A ddi classfication tool using attentional MLP-based binary tree.
+# AttADR
+A ddi side-effect classfication tool using attention-based deep learning network.
 
-<p align="center"><img width="80%" src="ddiAMBT.png" /></p>
+<p align="center"><img width="80%" src="AttADR.png" /></p>
 
 ## Quick Start
 
 ### Requirements
 - Python 3.6+
-- Keras == 2.2.4, Tensoflow == 1.14.0
+- Tensoflow == 2.7.0
 
-### Download attddi
+### Download AttADR
 ```shell
-git-lfs clone https://github.com/Liuzhe30/ddiAMBT
+git-lfs clone https://github.com/Liuzhe30/AttADR
 ```
 
 ### Dataset Preparation
