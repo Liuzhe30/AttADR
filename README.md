@@ -23,4 +23,4 @@ python3 pre_processing.py
 Any pull requests or issues are welcome.
 
 ## Progress
-- [x] README for running attddi.
+- [x] README for running AttADR.
