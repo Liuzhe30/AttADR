@@ -11,7 +11,7 @@ A ddi side-effect classfication tool using attention-based deep learning network
 
 ### Download AttADR
 ```shell
-git-lfs clone https://github.com/Liuzhe30/AttADR
+git clone https://github.com/Liuzhe30/AttADR
 ```
 
 ### Dataset Preparation
