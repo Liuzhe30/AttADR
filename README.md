@@ -15,8 +15,14 @@ git-lfs clone https://github.com/Liuzhe30/AttADR
 ```
 
 ### Dataset Preparation
+In this project, the three datasets corresponding to the three classification tasks are [dataset_task1](https://github.com/Liuzhe30/AttADR/blob/main/data/pair_label_task1.npy)
+, [dataset_task2](https://github.com/Liuzhe30/AttADR/blob/main/data/pair_label_test_task2.npy)
+ and [dataset_task3](https://github.com/Liuzhe30/AttADR/blob/main/data/pair_label_test_task3.npy) 
+ respectively.
+
+### Evaluate model
 ```shell
-python3 pre_processing.py
+python3 source/evaluate_AttADR.py
 ```
 
 ## Contributing to the project
