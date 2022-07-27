@@ -43,7 +43,7 @@ c = 336  # enzyme
 d = 398  # pathway
 e = 27  # transporter
 sum_feature = 3242 # dimension of 5 features
-maxlen = 3250 # 3242 + 8
+maxlen = 3246 
 
 # -----set transformer parameters-----
 vocab_size = 5
@@ -52,6 +52,20 @@ num_heads = 4
 ff_dim = 64
 pos_embed_dim = 64
 seq_embed_dim_bet = 62
+
+def attention_3d_block(inputs):
+    a = tf.keras.layers.Permute((2, 1))(inputs)
+    a = tf.keras.layers.Dense(maxlen, activation='relu')(a)
+    a_probs = tf.keras.layers.Permute((2, 1), name='attention_vec')(a)
+    output_attention_mul = tf.keras.layers.multiply([inputs, a_probs], name='attention_mul')
+    return output_attention_mul
+
+def create_padding_mask(seq):
+    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+    print(seq.shape)
+    # add extra dimensions to add the padding
+    # to the attention logits.
+    return  seq[:, tf.newaxis, tf.newaxis, :]# (batch_size, 1, 1, seq_len)
 
 def generate_batch(feature_dict, psy_list, pair_label, batch_size):
     while 1:
@@ -74,8 +88,8 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
                 else:
                     flag_B = 0
                 
-                drugA_feature = np.array(feature_dict[drugA] + [flag_A] + [0, 0, 0, 0, 0, 0, 0])
-                drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
+                drugA_feature = np.array([0] + feature_dict[drugA] + [0] + [flag_A] + [flag_A]) # 168+2314+336+398+28+2=3246
+                drugB_feature = np.array([0] + feature_dict[drugB] + [0] + [flag_B] + [flag_B])
                 
                 dataX_batch.append(np.c_[drugA_feature, drugB_feature])
                 #dataY_batch.append(to_categorical(label,2))
@@ -84,7 +98,7 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
             i += batch_size
             x = np.array(dataX_batch)
             y = np.array(dataY_batch)
-            mask = np.c_[np.ones((batch_size, sum_feature + 1)), np.zeros((batch_size, 7))]
+            mask = np.ones((batch_size, maxlen))
             sample_weights = np.array(weights)
             #print(mask.shape) #(batch_size, 3250)
             #print(x.shape) # (batch_size, 2)
@@ -111,8 +125,8 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
         else:
             flag_B = 0
         
-        drugA_feature = np.array(feature_dict[drugA] + [flag_A] + [0, 0, 0, 0, 0, 0, 0])
-        drugB_feature = np.array(feature_dict[drugB] + [flag_B] + [0, 0, 0, 0, 0, 0, 0])
+        drugA_feature = np.array([0] + feature_dict[drugA] + [0] + [flag_A] + [flag_A])
+        drugB_feature = np.array([0] + feature_dict[drugB] + [0] + [flag_B] + [flag_B])
         
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
         #dataY_batch.append(to_categorical(label,2))
@@ -120,27 +134,19 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
 
     x = np.array(dataX_batch)
     y = np.array(dataY_batch)
-    mask = np.c_[np.ones((len(pair_label), sum_feature + 1)), np.zeros((len(pair_label), 7))]
+    mask = np.ones((len(pair_label), maxlen))
 
     return [x, mask], y
-
-
-def create_padding_mask(seq):
-    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-    print(seq.shape)
-    # add extra dimensions to add the padding
-    # to the attention logits.
-    return  seq[:, tf.newaxis, tf.newaxis, :]# (batch_size, 1, 1, seq_len)
         
 # set args
 parser = argparse.ArgumentParser(description="DDI stucture.")
-parser.add_argument('--epochs', default=15, type=int)
-parser.add_argument('--batch_size', default=32, type=int)
-parser.add_argument('--lr', default=0.002, type=float,
+parser.add_argument('--epochs', default=30, type=int)
+parser.add_argument('--batch_size', default=128, type=int)
+parser.add_argument('--lr', default=0.01, type=float,
                         help="Initial learning rate")
 parser.add_argument('--lr_decay', default=0.05, type=float,
                         help="The value multiplied by lr at each epoch. Set a larger value for larger epochs")            
-parser.add_argument('--save_dir', default='../models/newdata-newstru-classweight-1-2-lr0.002/')
+parser.add_argument('--save_dir', default='../models/')
 parser.add_argument('-w', '--weights', default=None,
                         help="The path of the saved weights. Should be specified when testing")
 parser.add_argument('-t', '--testing', action='store_true',
@@ -164,7 +170,7 @@ with open('../data/label_ddi/psychiatric.csv', 'r') as file:
         psy_list.append(line.split(',')[1])
         line = file.readline()
 
-pair_label = np.load("../data/pair_label_task1.npy") # (321496, 3) each ddi (drug ID1, drug ID2, label)
+pair_label = np.load("../data/pair_label_task1.npy") # each ddi (drug ID1, drug ID2, label)
 train_set = pair_label[0:edge-1000, :]
 
 # data augmentation
@@ -173,6 +179,9 @@ train_set_aug = np.vstack((train_set, train_set_verse))
 
 valid_set = pair_label[edge-1000:edge-500, :] # 500
 test_set = pair_label[edge-500:edge, :] # 500
+
+train_set = np.vstack((train_set_aug, test_set[:, [1, 0, 2]]))
+
 valid_data = generate_valid_test(feature_dict, psy_list, valid_set)
 test_data = generate_valid_test(feature_dict, psy_list, test_set)
 #print(valid_data)
@@ -183,30 +192,26 @@ input1 = tf.keras.layers.Input(shape=(maxlen, 2), name = 'input-feature')
 input2 = tf.keras.layers.Input(shape=(maxlen, ), name = 'input-mask')
 mask = create_padding_mask(input2)
 
-embedding_layer_bet = TokenAndPositionEmbedding(maxlen, vocab_size, embed_dim, pos_embed_dim, seq_embed_dim_bet)
-trans_block_bet1 = TransformerBlock(embed_dim, num_heads, ff_dim)
+# global attention
+att = attention_3d_block(input1)
+bet = tf.keras.layers.BatchNormalization()(att, training = True)
+bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
-# self-attention 1
-bet = embedding_layer_bet([input2,input1])
-print('embedding_layer_bet.get_shape()', bet.get_shape()) # (3250, 64)
+# dropout
+bet = tf.keras.layers.Dropout(0.3)(bet)
 
-bet = trans_block_bet1(bet, mask)
-print('trans_layer1.get_shape()', bet.get_shape()) # (3250, 64)
-bet = tf.keras.layers.BatchNormalization()(bet, training = True)
-
-# cnn block 1
-bet = tf.keras.layers.Conv1D(64, 3, kernel_initializer='he_uniform', activation='relu')(bet)
-bet = tf.keras.layers.BatchNormalization()(bet, training = True)
-bet = tf.keras.layers.Conv1D(128, 5, kernel_initializer='he_uniform', activation='relu')(bet)
+# self-attention 
+attention = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
+bet = attention(bet, bet)
 bet = tf.keras.layers.BatchNormalization()(bet, training = True)
 bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
-# self-attention 2
-attention2 = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=16)
+# self-attention 
+attention2 = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
 bet = attention2(bet, bet)
+bet = tf.keras.layers.BatchNormalization()(bet, training = True)
 
-# cnn block 2
-bet = tf.keras.layers.Conv1D(4, 1, kernel_initializer='he_uniform')(bet)
+# final GAP layer
 bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
 #output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)
 output = tf.keras.layers.Dense(1, activation = 'sigmoid', name = 'output_softmax')(bet)
@@ -218,7 +223,7 @@ model.summary()
 # callbacks
 log = tf.keras.callbacks.CSVLogger(args.save_dir + '/log.csv')
 #tensorboard = tf.keras.callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs', histogram_freq=int(args.debug))
-#EarlyStopping = callbacks.EarlyStopping(monitor='val_cc2', min_delta=0.01, patience=5, verbose=0, mode='max', baseline=None, restore_best_weights=True)
+#EarlyStopping = callbacks.EarlyStopping(monitor='val_acc', min_delta=0.01, patience=5, verbose=0, mode='max', baseline=None, restore_best_weights=True)
 checkpoint = tf.keras.callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', 
                                         monitor='val_acc', 
                                         mode='max', 
@@ -226,10 +231,11 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch
                                         save_best_only=True, 
                                         save_weights_only=True, verbose=1)        
 lr_decay = tf.keras.callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
+opt = tf.keras.optimizers.Adam(lr=args.lr, decay=0.05)
 
 class_weights = {0:1, 1:2}
 # Train the model and save it
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
+model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['acc'])
 
 history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch_size), # Tf2 new feature
           steps_per_epoch = len(train_set)/args.batch_size,
@@ -237,7 +243,7 @@ history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch
           validation_data = generate_valid_test(feature_dict, psy_list, valid_set),
           validation_steps = len(valid_set),
           #callbacks = [log, tensorboard, checkpoint, lr_decay],
-          callbacks = [log, checkpoint, lr_decay],
+          callbacks = [log, checkpoint],
           shuffle = True,
           #batch_size=args.batch_size,
           workers = 1,
@@ -246,6 +252,3 @@ history = model.fit(generate_batch(feature_dict, psy_list, train_set, args.batch
 model.save_weights(args.save_dir + '/trained_weights.h5')
 model.save(args.save_dir + '/trained_model.h5')
 print('Trained model saved to \'%s/trained_model.h5\'' % args.save_dir)
-
-
-
