@@ -37,7 +37,7 @@ c = 336  # enzyme
 d = 398  # pathway
 e = 27  # transporter
 sum_feature = 3242 # dimension of 5 features
-maxlen = 3246 
+maxlen = a+c+d+e+1
 
 # -----set transformer parameters-----
 vocab_size = 5
@@ -54,6 +54,53 @@ def attention_3d_block(inputs):
     output_attention_mul = tf.keras.layers.multiply([inputs, a_probs], name='attention_mul')
     return output_attention_mul
 
+def create_padding_mask(seq):
+    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+    print(seq.shape)
+    # add extra dimensions to add the padding
+    # to the attention logits.
+    return  seq[:, tf.newaxis, tf.newaxis, :]# (batch_size, 1, 1, seq_len)
+
+def generate_batch(feature_dict, psy_list, pair_label, batch_size):
+    while 1:
+        for i in range(len(pair_label) - batch_size): # 380480
+            dataX_batch, dataY_batch, weights = [], [], []  # (batch_size, 3242, 2) , (batch_size, 2)
+            
+            for j in range(i, i + batch_size):
+                
+                drugA = pair_label[j][0]
+                drugB = pair_label[j][1]
+                label = int(pair_label[j][2].strip())
+                
+                # check psydrug 0/1
+                if(drugA in psy_list):
+                    flag_A = 1
+                else:
+                    flag_A = 0
+                if(drugB in psy_list):
+                    flag_B = 1
+                else:
+                    flag_B = 0
+                
+                drugA_feature = np.array(feature_dict[drugA][0:a] + feature_dict[drugA][a+b:] + [flag_A]) # a+c+d+e+1
+                drugB_feature = np.array(feature_dict[drugB][0:a] + feature_dict[drugB][a+b:] + [flag_B]) # a+c+d+e+1
+                
+                dataX_batch.append(np.c_[drugA_feature, drugB_feature])
+                #dataY_batch.append(to_categorical(label,2))
+                dataY_batch.append(label)
+            
+            i += batch_size
+            x = np.array(dataX_batch)
+            y = np.array(dataY_batch)
+            mask = np.ones((batch_size, maxlen))
+            sample_weights = np.array(weights)
+            #print(mask.shape) #(batch_size, 3250)
+            #print(x.shape) # (batch_size, 2)
+            #print(y.shape) # (batch_size, 2)
+
+            #yield([x, mask], y, sample_weights)
+            yield([x, mask], y)
+
 def generate_valid_test(feature_dict, psy_list, pair_label):
 
     dataX_batch, dataY_batch = [], []
@@ -61,7 +108,7 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
         drugA = pair_label[i][0]
         drugB = pair_label[i][1]
         label = int(pair_label[i][2].strip())
-
+        
         # check psydrug 0/1
         if(drugA in psy_list):
             flag_A = 1
@@ -71,10 +118,10 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
             flag_B = 1
         else:
             flag_B = 0
-
-        drugA_feature = np.array([0] + feature_dict[drugA] + [0] + [flag_A] + [flag_A])
-        drugB_feature = np.array([0] + feature_dict[drugB] + [0] + [flag_B] + [flag_B])
-
+        
+        drugA_feature = np.array(feature_dict[drugA][0:a] + feature_dict[drugA][a+b:] + [flag_A])
+        drugB_feature = np.array(feature_dict[drugB][0:a] + feature_dict[drugB][a+b:] + [flag_B])
+        
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
         #dataY_batch.append(to_categorical(label,2))
         dataY_batch.append(label)
@@ -154,7 +201,7 @@ mask = create_padding_mask(input2)
 # global attention
 att = attention_3d_block(input1)
 bet = tf.keras.layers.BatchNormalization()(att, training = True)
-bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
+#bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
 # dropout
 bet = tf.keras.layers.Dropout(0.3)(bet)
@@ -163,21 +210,13 @@ bet = tf.keras.layers.Dropout(0.3)(bet)
 attention = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
 bet = attention(bet, bet)
 bet = tf.keras.layers.BatchNormalization()(bet, training = True)
-bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
+#bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
 # self-attention 
 attention2 = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
 bet = attention2(bet, bet)
 bet = tf.keras.layers.BatchNormalization()(bet, training = True)
 
-'''
-mask1 = create_padding_mask(bet)
-embedding_layer_bet1 = TokenAndPositionEmbedding(maxlen/2, 5, 64, 64, 62) # maxlen, vocab_size, embed_dim, pos_embed_dim, seq_embed_dim_bet
-trans_block_bet1 = TransformerBlock(64, 4, 64) # embed_dim, num_heads, ff_dim
- 
-# self-attention 1
-bet = embedding_layer_bet([bet,mask1])
-'''
 # final GAP layer
 bet = tf.keras.layers.GlobalAveragePooling1D()(bet)
 #output = tf.keras.layers.Dense(2, activation = 'softmax', name = 'output_softmax')(bet)

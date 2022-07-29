@@ -43,7 +43,7 @@ c = 336  # enzyme
 d = 398  # pathway
 e = 27  # transporter
 sum_feature = 3242 # dimension of 5 features
-maxlen = 3246 
+maxlen = a+c+d+e+1
 
 # -----set transformer parameters-----
 vocab_size = 5
@@ -88,8 +88,8 @@ def generate_batch(feature_dict, psy_list, pair_label, batch_size):
                 else:
                     flag_B = 0
                 
-                drugA_feature = np.array([0] + feature_dict[drugA] + [0] + [flag_A] + [flag_A]) # 168+2314+336+398+28+2=3246
-                drugB_feature = np.array([0] + feature_dict[drugB] + [0] + [flag_B] + [flag_B])
+                drugA_feature = np.array(feature_dict[drugA][0:a] + feature_dict[drugA][a+b:] + [flag_A]) # a+c+d+e+1
+                drugB_feature = np.array(feature_dict[drugB][0:a] + feature_dict[drugB][a+b:] + [flag_B]) # a+c+d+e+1
                 
                 dataX_batch.append(np.c_[drugA_feature, drugB_feature])
                 #dataY_batch.append(to_categorical(label,2))
@@ -125,8 +125,8 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
         else:
             flag_B = 0
         
-        drugA_feature = np.array([0] + feature_dict[drugA] + [0] + [flag_A] + [flag_A])
-        drugB_feature = np.array([0] + feature_dict[drugB] + [0] + [flag_B] + [flag_B])
+        drugA_feature = np.array(feature_dict[drugA][0:a] + feature_dict[drugA][a+b:] + [flag_A])
+        drugB_feature = np.array(feature_dict[drugB][0:a] + feature_dict[drugB][a+b:] + [flag_B])
         
         dataX_batch.append(np.c_[drugA_feature, drugB_feature])
         #dataY_batch.append(to_categorical(label,2))
@@ -142,7 +142,7 @@ def generate_valid_test(feature_dict, psy_list, pair_label):
 parser = argparse.ArgumentParser(description="DDI stucture.")
 parser.add_argument('--epochs', default=30, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
-parser.add_argument('--lr', default=0.01, type=float,
+parser.add_argument('--lr', default=0.002, type=float,
                         help="Initial learning rate")
 parser.add_argument('--lr_decay', default=0.05, type=float,
                         help="The value multiplied by lr at each epoch. Set a larger value for larger epochs")            
@@ -195,7 +195,7 @@ mask = create_padding_mask(input2)
 # global attention
 att = attention_3d_block(input1)
 bet = tf.keras.layers.BatchNormalization()(att, training = True)
-bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
+#bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
 # dropout
 bet = tf.keras.layers.Dropout(0.3)(bet)
@@ -204,7 +204,7 @@ bet = tf.keras.layers.Dropout(0.3)(bet)
 attention = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
 bet = attention(bet, bet)
 bet = tf.keras.layers.BatchNormalization()(bet, training = True)
-bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
+#bet = tf.keras.layers.MaxPooling1D(2, strides=2)(bet)
 
 # self-attention 
 attention2 = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=32)
