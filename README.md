@@ -2,6 +2,7 @@
 A ddi side-effect classfication tool using attention-based deep learning network.
 
 <p align="center"><img width="100%" src="AttADR.png" /></p>
+<p align="center"><img width="100%" src="visulization/attention-vis-heatmap.png" /></p>
 
 ## Quick Start
 
