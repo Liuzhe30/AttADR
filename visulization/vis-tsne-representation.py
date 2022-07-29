@@ -20,14 +20,17 @@ def plot_embedding(data, label, title):
     plt.title(title)
     return fig
 
-inputn = np.load("input.npy") # (500, 3246, 2)
-att_out = np.load("att_out.npy") # (500, 3246, 2)
-att_out2 = np.load("att_out2.npy") # (500, 1623, 2)
-att_out3 = np.load("att_out3.npy") # (500, 811, 2)
+inputn = np.load("input.npy") # (500, 929, 2)
+att_out = np.load("att_out.npy") # (500, 929, 2)
+att_out2 = np.load("att_out2.npy") # (500, 929, 2)
+att_out3 = np.load("att_out3.npy") # (500, 929, 2)
 label = np.load("label_test500.npy") # (500,)
 print(label.shape)
 
-select_f = att_out3
+select_f = inputn
+#select_f = att_out
+#select_f = att_out2
+#select_f = att_out3
 
 fig = plt.figure()
 tsne = TSNE(n_components=2, init='pca', random_state=0)
@@ -51,6 +54,9 @@ for i in range(result.shape[0]):
         s2 = plt.scatter(result[i, 0], result[i, 1],s=20,color=color[label[i]])
 plt.xlabel('Dimension 1')
 plt.ylabel('Dimension 2')
-plt.title('t-SNE embedding of the 2nd MHA layer')
+plt.title('t-SNE embedding of the input layer')
+#plt.title('t-SNE embedding of the global attention layer')
+#plt.title('t-SNE embedding of the 1st MHA layer')
+#plt.title('t-SNE embedding of the 2nd MHA layer')
 plt.legend((s1,s2),('0','1') ,loc = 'best')
 plt.show()
